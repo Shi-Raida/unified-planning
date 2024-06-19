@@ -1857,13 +1857,20 @@ class PDDLReader:
             assert isinstance(action, up.model.Action), "Wrong plan or renaming."
             parameters = []
             for p in params_name:
-                obj = (
-                    get_item_named(p)
-                    if get_item_named is not None
-                    else problem.object(p)
-                )
-                assert isinstance(obj, up.model.Object), "Wrong plan or renaming."
-                parameters.append(problem.environment.expression_manager.ObjectExp(obj))
+                if p.isdigit():
+                    parameters.append(problem.environment.expression_manager.Int(int(p)))
+                elif p in ["true", "false"]:
+                    parameters.append(
+                        problem.environment.expression_manager.Bool(p == "true")
+                    )
+                else:
+                    obj = (
+                        get_item_named(p)
+                        if get_item_named is not None
+                        else problem.object(p)
+                    )
+                    assert isinstance(obj, up.model.Object), "Wrong plan or renaming."
+                    parameters.append(problem.environment.expression_manager.ObjectExp(obj))
             act_instance = up.plans.ActionInstance(action, tuple(parameters))
             if is_tt:
                 actions.append((start, act_instance, dur))
