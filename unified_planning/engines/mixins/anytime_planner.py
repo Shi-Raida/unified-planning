@@ -47,6 +47,7 @@ class AnytimePlannerMixin(ABC):
     def get_solutions(
         self,
         problem: "up.model.AbstractProblem",
+        warm_start_plan: Optional["up.model.Plan"] = None,
         timeout: Optional[float] = None,
         output_stream: Optional[IO[str]] = None,
     ) -> Iterator["up.engines.results.PlanGenerationResult"]:
@@ -55,6 +56,8 @@ class AnytimePlannerMixin(ABC):
         which contains information about the solution to the problem given by the planner.
 
         :param problem: is the `AbstractProblem` to solve.
+        :param warm_start_plan: is a valid `Plan` that can be used as a starting point for the planner.
+            If present, the engine is free to exploit it or not.
         :param timeout: is the time in seconds that the planner has at max to solve the problem, defaults to `None`.
         :param output_stream: is a stream of strings where the planner writes his
             output (and also errors) while it is solving the problem; defaults to `None`.
@@ -73,13 +76,16 @@ class AnytimePlannerMixin(ABC):
         if not problem_kind.has_quality_metrics() and self.optimality_metric_required:
             msg = f"The problem has no quality metrics but the engine is required to satisfies some optimality guarantee!"
             raise up.exceptions.UPUsageError(msg)
-        for res in self._get_solutions(problem, timeout, output_stream):
+        for res in self._get_solutions(
+            problem, warm_start_plan, timeout, output_stream
+        ):
             yield res
 
     @abstractmethod
     def _get_solutions(
         self,
         problem: "up.model.AbstractProblem",
+        warm_start_plan: Optional["up.model.Plan"] = None,
         timeout: Optional[float] = None,
         output_stream: Optional[IO[str]] = None,
     ) -> Iterator["up.engines.results.PlanGenerationResult"]:
