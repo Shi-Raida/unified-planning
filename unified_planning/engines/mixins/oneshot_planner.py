@@ -48,7 +48,6 @@ class OneshotPlannerMixin(ABC):
         self,
         problem: "up.model.AbstractProblem",
         heuristic: Optional[Callable[["up.model.state.State"], Optional[float]]] = None,
-        warm_start_plan: Optional["up.model.Plan"] = None,
         timeout: Optional[float] = None,
         output_stream: Optional[IO[str]] = None,
     ) -> "up.engines.results.PlanGenerationResult":
@@ -58,8 +57,6 @@ class OneshotPlannerMixin(ABC):
 
         :param problem: is the `AbstractProblem` to solve.
         :param heuristic: is a function that given a state returns its heuristic value or `None` if the state is a dead-end, defaults to `None`.
-        :param warm_start_plan: is a valid `Plan` that can be used as a starting point for the planner.
-            If present, the engine is free to exploit it or not.
         :param timeout: is the time in seconds that the planner has at max to solve the problem, defaults to `None`.
         :param output_stream: is a stream of strings where the planner writes his
             output (and also errors) while it is solving the problem; defaults to `None`.
@@ -80,14 +77,30 @@ class OneshotPlannerMixin(ABC):
         if not problem_kind.has_quality_metrics() and self.optimality_metric_required:
             msg = f"The problem has no quality metrics but the engine is required to be optimal!"
             raise up.exceptions.UPUsageError(msg)
-        return self._solve(problem, heuristic, warm_start_plan, timeout, output_stream)
+        return self._solve(problem, heuristic, timeout, output_stream)
+
+    def solve_with_warm_start(
+        self,
+        problem: "up.model.AbstractProblem",
+        heuristic: Optional[Callable[["up.model.state.State"], Optional[float]]] = None,
+        warm_start_plan: Optional["up.model.Plan"] = None,
+        timeout: Optional[float] = None,
+        output_stream: Optional[IO[str]] = None,
+    ) -> "up.engines.results.PlanGenerationResult":
+        """
+        This method solves the problem with an optional warm start plan.
+        If the planner does not support warm start, it will call the OneshotPlannerMixin.solve method.
+
+        :param warm_start_plan: is a valid `Plan` that can be used as a starting point for the planner.
+            If present, the engine is free to exploit it or not.
+        """
+        return self.solve(problem, heuristic, timeout, output_stream)
 
     @abstractmethod
     def _solve(
         self,
         problem: "up.model.AbstractProblem",
         heuristic: Optional[Callable[["up.model.state.State"], Optional[float]]] = None,
-        warm_start_plan: Optional["up.model.Plan"] = None,
         timeout: Optional[float] = None,
         output_stream: Optional[IO[str]] = None,
     ) -> "up.engines.results.PlanGenerationResult":
